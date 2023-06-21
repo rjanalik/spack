@@ -616,6 +616,7 @@ def provides(*specs, when: Optional[str] = None):
         # ``when`` specs for ``provides()`` need a name, as they are used
         # to build the ProviderIndex.
         when_spec.name = pkg.name
+
         spec_objs = [spack.spec.Spec(x) for x in specs]
         spec_names = [x.name for x in spec_objs]
         if len(spec_names) > 1:
@@ -625,9 +626,8 @@ def provides(*specs, when: Optional[str] = None):
             if pkg.name == provided_spec.name:
                 raise CircularReferenceError("Package '%s' cannot provide itself." % pkg.name)
 
-            if provided_spec not in pkg.provided:
-                pkg.provided[provided_spec] = set()
-            pkg.provided[provided_spec].add(when_spec)
+            provided_set = pkg.provided.setdefault(when_spec, set())
+            provided_set.add(provided_spec)
 
     return _execute_provides
 
