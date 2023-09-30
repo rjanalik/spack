@@ -172,7 +172,7 @@ pkg_fact(Package, version_declared(Version, Weight)) :- pkg_fact(Package, versio
 % We cannot use a version declared for an installed package if we end up building it
 :- pkg_fact(Package, version_declared(Version, Weight, "installed")),
    attr("version", node(ID, Package), Version),
-   version_weight(node(ID, Package), Weight),
+   attr("version_weight", node(ID, Package), Weight),
    not attr("hash", node(ID, Package), _),
    internal_error("Reuse version weight used for built package").
 
@@ -212,7 +212,7 @@ possible_version_weight(node(ID, Package), Weight)
 % we can't use the weight for an external version if we don't use the
 % corresponding external spec.
 :- attr("version", node(ID, Package), Version),
-   version_weight(node(ID, Package), Weight),
+   attr("version_weight", node(ID, Package), Weight),
    pkg_fact(Package, version_declared(Version, Weight, "external")),
    not external(node(ID, Package)),
    internal_error("External weight used for built package").
@@ -220,18 +220,18 @@ possible_version_weight(node(ID, Package), Weight)
 % we can't use a weight from an installed spec if we are building it
 % and vice-versa
 :- attr("version", node(ID, Package), Version),
-   version_weight(node(ID, Package), Weight),
+   attr("version_weight", node(ID, Package), Weight),
    pkg_fact(Package, version_declared(Version, Weight, "installed")),
    build(node(ID, Package)),
    internal_error("Reuse version weight used for build package").
 
 :- attr("version", node(ID, Package), Version),
-   version_weight(node(ID, Package), Weight),
+   attr("version_weight", node(ID, Package), Weight),
    not pkg_fact(Package, version_declared(Version, Weight, "installed")),
    not build(node(ID, Package)),
    internal_error("Build version weight used for reused package").
 
-1 { version_weight(node(ID, Package), Weight) : pkg_fact(Package, version_declared(Version, Weight)) } 1
+1 { attr("version_weight", node(ID, Package), Weight) : pkg_fact(Package, version_declared(Version, Weight)) } 1
   :- attr("version", node(ID, Package), Version),
      attr("node", node(ID, Package)),
      internal_error("version weights must exist and be unique").
@@ -580,7 +580,7 @@ do_not_impose(EffectID, node(X, Package))
 % A provider may have different possible weights depending on whether it's an external
 % or not, or on preferences expressed in packages.yaml etc. This rule ensures that
 % we select the weight, among the possible ones, that minimizes the overall objective function.
-1 { provider_weight(DependencyNode, VirtualNode, Weight) :
+1 { attr("provider_weight", DependencyNode, VirtualNode, Weight) :
     possible_provider_weight(DependencyNode, VirtualNode, Weight, _) } 1
  :- provider(DependencyNode, VirtualNode), internal_error("Package provider weights must be unique").
 
@@ -623,7 +623,7 @@ error(100, "Attempted to use external for '{0}' which does not satisfy a unique 
   :- external(node(ID, Package)),
      2 { external_version(node(ID, Package), Version, Weight) }.
 
-version_weight(PackageNode, Weight) :- external_version(PackageNode, Version, Weight).
+attr("version_weight", PackageNode, Weight) :- external_version(PackageNode, Version, Weight).
 attr("version", PackageNode, Version) :- external_version(PackageNode, Version, Weight).
 
 % if a package is not buildable, only externals or hashed specs are allowed
@@ -641,7 +641,7 @@ external(PackageNode) :- attr("external_spec_selected", PackageNode, _).
 % we can't use the weight for an external version if we don't use the
 % corresponding external spec.
 :- attr("version",  node(ID, Package), Version),
-   version_weight(node(ID, Package), Weight),
+   attr("version_weight", node(ID, Package), Weight),
    pkg_fact(Package, version_declared(Version, Weight, "external")),
    not external(node(ID, Package)),
    internal_error("External weight used for internal spec").
@@ -863,7 +863,7 @@ attr("variant_value", PackageNode, Variant, Value)
 % The rules below allow us to prefer default values for variants
 % whenever possible. If a variant is set in a spec, or if it is
 % specified in an external, we score it as if it was a default value.
-variant_not_default(node(ID, Package), Variant, Value)
+attr("variant_not_default", node(ID, Package), Variant, Value)
  :- attr("variant_value", node(ID, Package), Variant, Value),
     not variant_default_value(Package, Variant, Value),
     % variants set explicitly on the CLI don't count as non-default
@@ -878,7 +878,7 @@ variant_not_default(node(ID, Package), Variant, Value)
 
 
 % A default variant value that is not used
-variant_default_not_used(node(ID, Package), Variant, Value)
+attr("variant_default_not_used", node(ID, Package), Variant, Value)
   :- variant_default_value(Package, Variant, Value),
      node_has_variant(node(ID, Package), Variant),
      not attr("variant_value", node(ID, Package), Variant, Value),
@@ -1063,7 +1063,7 @@ attr("node_target", PackageNode, Target)
  :- attr("node", PackageNode), attr("node_target_set", PackageNode, Target).
 
 % each node has the weight of its assigned target
-node_target_weight(node(ID, Package), Weight)
+attr("node_target_weight", node(ID, Package), Weight)
  :- attr("node", node(ID, Package)),
     attr("node_target", node(ID, Package), Target),
     target_weight(Target, Weight).
@@ -1188,16 +1188,12 @@ compiler_mismatch_required(PackageNode, DependencyNode)
 #defined allow_compiler/2.
 
 % compilers weighted by preference according to packages.yaml
-node_compiler_weight(node(ID, Package), Weight)
- :- node_compiler(node(ID, Package), CompilerID),
-    compiler_name(CompilerID, Compiler),
-    compiler_version(CompilerID, V),
+attr("node_compiler_weight", PackageNode, Weight)
+ :- node_compiler(PackageNode, CompilerID),
     compiler_weight(CompilerID, Weight).
 
-node_compiler_weight(node(ID, Package), 100)
- :- node_compiler(node(ID, Package), CompilerID),
-    compiler_name(CompilerID, Compiler),
-    compiler_version(CompilerID, V),
+attr("node_compiler_weight", PackageNode, 100)
+ :- node_compiler(PackageNode, CompilerID),
     not compiler_weight(CompilerID, _).
 
 % For the time being, be strict and reuse only if the compiler match one we have on the system
@@ -1334,7 +1330,7 @@ build_priority(PackageNode, 0)   :- not build(PackageNode), attr("node", Package
 % will instead build the latest bar. When we actually include transitive
 % build deps in the solve, consider using them as a preference to resolve this.
 :- attr("version", node(ID, Package), Version),
-   version_weight(node(ID, Package), Weight),
+   attr("version_weight", node(ID, Package), Weight),
    pkg_fact(Package, version_declared(Version, Weight, "installed")),
    not optimize_for_reuse().
 
@@ -1408,7 +1404,7 @@ opt_criterion(70, "version weight").
 #minimize {
     Weight@70+Priority
     : attr("root", PackageNode),
-      version_weight(PackageNode, Weight),
+      attr("version_weight", PackageNode, Weight),
       build_priority(PackageNode, Priority)
 }.
 
@@ -1417,7 +1413,7 @@ opt_criterion(65, "number of non-default variants (roots)").
 #minimize{ 0@65: #true }.
 #minimize {
     1@65+Priority,PackageNode,Variant,Value
-    : variant_not_default(PackageNode, Variant, Value),
+    : attr("variant_not_default", PackageNode, Variant, Value),
       attr("root", PackageNode),
       build_priority(PackageNode, Priority)
 }.
@@ -1427,7 +1423,7 @@ opt_criterion(60, "preferred providers for roots").
 #minimize{ 0@60: #true }.
 #minimize{
     Weight@60+Priority,ProviderNode,Virtual
-    : provider_weight(ProviderNode, Virtual, Weight),
+    : attr("provider_weight", ProviderNode, Virtual, Weight),
       attr("root", ProviderNode),
       build_priority(ProviderNode, Priority)
 }.
@@ -1437,7 +1433,7 @@ opt_criterion(55, "default values of variants not being used (roots)").
 #minimize{ 0@55: #true }.
 #minimize{
     1@55+Priority,PackageNode,Variant,Value
-    : variant_default_not_used(PackageNode, Variant, Value),
+    : attr("variant_default_not_used", PackageNode, Variant, Value),
       attr("root", PackageNode),
       build_priority(PackageNode, Priority)
 }.
@@ -1448,7 +1444,7 @@ opt_criterion(50, "number of non-default variants (non-roots)").
 #minimize{ 0@50: #true }.
 #minimize {
     1@50+Priority,PackageNode,Variant,Value
-    : variant_not_default(PackageNode, Variant, Value),
+    : attr("variant_not_default", PackageNode, Variant, Value),
       not attr("root", PackageNode),
       build_priority(PackageNode, Priority)
 }.
@@ -1460,7 +1456,7 @@ opt_criterion(45, "preferred providers (non-roots)").
 #minimize{ 0@45: #true }.
 #minimize{
     Weight@45+Priority,ProviderNode,Virtual
-    : provider_weight(ProviderNode, Virtual, Weight),
+    : attr("provider_weight", ProviderNode, Virtual, Weight),
       not attr("root", ProviderNode),
       build_priority(ProviderNode, Priority)
 }.
@@ -1509,7 +1505,7 @@ opt_criterion(25, "version badness").
 #minimize{ 0@25: #true }.
 #minimize{
     Weight@25+Priority,PackageNode
-    : version_weight(PackageNode, Weight),
+    : attr("version_weight", PackageNode, Weight),
       build_priority(PackageNode, Priority)
 }.
 
@@ -1519,7 +1515,7 @@ opt_criterion(20, "default values of variants not being used (non-roots)").
 #minimize{ 0@20: #true }.
 #minimize{
     1@20+Priority,PackageNode,Variant,Value
-    : variant_default_not_used(PackageNode, Variant, Value),
+    : attr("variant_default_not_used", PackageNode, Variant, Value),
       not attr("root", PackageNode),
       build_priority(PackageNode, Priority)
 }.
@@ -1530,7 +1526,7 @@ opt_criterion(15, "non-preferred compilers").
 #minimize{ 0@15: #true }.
 #minimize{
     Weight@15+Priority,PackageNode
-    : node_compiler_weight(PackageNode, Weight),
+    : attr("node_compiler_weight", PackageNode, Weight),
       build_priority(PackageNode, Priority)
 }.
 
@@ -1550,7 +1546,7 @@ opt_criterion(5, "non-preferred targets").
 #minimize{ 0@5: #true }.
 #minimize{
     Weight@5+Priority,PackageNode
-    : node_target_weight(PackageNode, Weight),
+    : attr("node_target_weight", PackageNode, Weight),
       build_priority(PackageNode, Priority)
 }.
 
@@ -1560,7 +1556,7 @@ opt_criterion(1, "edge wiring").
 #minimize{ 0@1: #true }.
 #minimize{
     Weight@1,ParentNode,PackageNode
-    : version_weight(PackageNode, Weight),
+    : attr("version_weight", PackageNode, Weight),
       not attr("root", PackageNode),
       depends_on(ParentNode, PackageNode)
 }.
