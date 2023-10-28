@@ -717,6 +717,23 @@ class PackageBase(WindowsRPath, PackageViewMixin, metaclass=PackageMeta):
         return _by_name(cls.dependencies, when=when)
 
     @classmethod
+    def variant_names(cls):
+        return _names(cls.variants)
+
+    @classmethod
+    def variants_by_name(cls, when: bool = False):
+        return _by_name(cls.variants, when)
+
+    def variant_descriptor(self, name):
+        """Get the variant descriptor for a variant on this package's spec."""
+        if name not in self.spec.variants:
+            raise ValueError(f"No variant '{name}' on spec: {self.spec}")
+
+        for when, variants_by_name in self.variants.items():
+            if self.spec.satisfies(when) and name in variants_by_name:
+                return variants_by_name[name]
+
+    @classmethod
     def possible_dependencies(
         cls,
         transitive=True,

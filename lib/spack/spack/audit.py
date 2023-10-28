@@ -530,9 +530,14 @@ def _ensure_env_methods_are_ported_to_builders(pkgs, error_cls):
     errors = []
     for pkg_name in pkgs:
         pkg_cls = spack.repo.PATH.get_pkg_class(pkg_name)
-        buildsystem_variant, _ = pkg_cls.variants["build_system"]
-        buildsystem_names = [getattr(x, "value", x) for x in buildsystem_variant.values]
+
+        buildsystem_names = set()
+        build_system_variants = pkg_cls.variants_by_name()["build_system"]
+        buildsystem_names = set(
+            getattr(v, "value", v) for variant in build_system_variants for v in variant.values
+        )
         builder_cls_names = [spack.builder.BUILDER_CLS[x].__name__ for x in buildsystem_names]
+
         module = pkg_cls.module
         has_builders_in_package_py = any(
             getattr(module, name, False) for name in builder_cls_names
@@ -668,7 +673,7 @@ def _unknown_variants_in_dependencies(pkgs, error_cls):
                 dependency_variants = dep.spec.variants
                 for name, value in dependency_variants.items():
                     try:
-                        v, _ = dependency_pkg_cls.variants[name]
+                        v, _ = dependency_pkg_cls.variants_by_name()[name]
                         v.validate_or_raise(value, pkg_cls=dependency_pkg_cls)
                     except Exception as e:
                         summary = (
@@ -691,38 +696,40 @@ def _unknown_variants_in_dependencies(pkgs, error_cls):
 @package_directives
 def _ensure_variant_defaults_are_parsable(pkgs, error_cls):
     """Ensures that variant defaults are present and parsable from cli"""
+
+    def check_variant(pkg_name, variant):
+        default_is_parsable = (
+            # Permitting a default that is an instance on 'int' permits
+            # to have foo=false or foo=0. Other falsish values are
+            # not allowed, since they can't be parsed from cli ('foo=')
+            isinstance(variant.default, int)
+            or variant.default
+        )
+        if not default_is_parsable:
+            msg = f"Variant '{vname}' of package '{pkg_name}' has a bad default value"
+            errors.append(error_cls(msg, []))
+            return
+
+        try:
+            vspec = variant.make_default()
+        except spack.variant.MultipleValuesInExclusiveVariantError:
+            msg = f"Can't create default value for variant '{vname}' in package '{pkg_name}'"
+            errors.append(error_cls(msg, []))
+            return
+
+        try:
+            variant.validate_or_raise(vspec, pkg_cls=pkg_cls)
+        except spack.variant.InvalidVariantValueError:
+            msg = "Default value of variant '{vname}' in package '{pkg.name}' is invalid"
+            question = "Is it among the allowed values?"
+            errors.append(error_cls(msg, [question]))
+
     errors = []
     for pkg_name in pkgs:
         pkg_cls = spack.repo.PATH.get_pkg_class(pkg_name)
-        for variant_name, entry in pkg_cls.variants.items():
-            variant, _ = entry
-            default_is_parsable = (
-                # Permitting a default that is an instance on 'int' permits
-                # to have foo=false or foo=0. Other falsish values are
-                # not allowed, since they can't be parsed from cli ('foo=')
-                isinstance(variant.default, int)
-                or variant.default
-            )
-            if not default_is_parsable:
-                error_msg = "Variant '{}' of package '{}' has a bad default value"
-                errors.append(error_cls(error_msg.format(variant_name, pkg_name), []))
-                continue
-
-            try:
-                vspec = variant.make_default()
-            except spack.variant.MultipleValuesInExclusiveVariantError:
-                error_msg = "Cannot create a default value for the variant '{}' in package '{}'"
-                errors.append(error_cls(error_msg.format(variant_name, pkg_name), []))
-                continue
-
-            try:
-                variant.validate_or_raise(vspec, pkg_cls=pkg_cls)
-            except spack.variant.InvalidVariantValueError:
-                error_msg = (
-                    "The default value of the variant '{}' in package '{}' failed validation"
-                )
-                question = "Is it among the allowed values?"
-                errors.append(error_cls(error_msg.format(variant_name, pkg_name), [question]))
+        for vname, variants in pkg_cls.variants_by_name().items():
+            for variant in variants:
+                check_variant(pkg_cls, variant)
 
     return errors
 
@@ -733,11 +740,11 @@ def _ensure_variants_have_descriptions(pkgs, error_cls):
     errors = []
     for pkg_name in pkgs:
         pkg_cls = spack.repo.PATH.get_pkg_class(pkg_name)
-        for variant_name, entry in pkg_cls.variants.items():
-            variant, _ = entry
-            if not variant.description:
-                error_msg = "Variant '{}' in package '{}' is missing a description"
-                errors.append(error_cls(error_msg.format(variant_name, pkg_name), []))
+        for name, variants in pkg_cls.variants_by_name().items():
+            for variant in variants:
+                if not variant.description:
+                    msg = f"Variant '{name}' in package '{pkg_name}' is missing a description"
+                    errors.append(error_cls(msg, []))
 
     return errors
 
@@ -794,29 +801,28 @@ def _version_constraints_are_satisfiable_by_some_version_in_repo(pkgs, error_cls
 
 
 def _analyze_variants_in_directive(pkg, constraint, directive, error_cls):
-    variant_exceptions = (
-        spack.variant.InconsistentValidationError,
-        spack.variant.MultipleValuesInExclusiveVariantError,
-        spack.variant.InvalidVariantValueError,
-        KeyError,
-    )
     errors = []
     for name, v in constraint.variants.items():
-        try:
-            variant, _ = pkg.variants[name]
-            variant.validate_or_raise(v, pkg_cls=pkg)
-        except variant_exceptions as e:
-            summary = pkg.name + ': wrong variant in "{0}" directive'
-            summary = summary.format(directive)
-            filename = spack.repo.PATH.filename_for_package_name(pkg.name)
+        variants_by_name = pkg.variants_by_name()
+        summary = f"{pkg.name}: wrong variant in '{directive}' directive"
+        filename = spack.repo.PATH.filename_for_package_name(pkg.name)
 
-            error_msg = str(e).strip()
-            if isinstance(e, KeyError):
-                error_msg = "the variant {0} does not exist".format(error_msg)
+        if name not in variants_by_name:
+            msg = f"variant {name} does not exist in {pkg.name}"
+            errors.append(error_cls(summary=summary, details=[msg, f"in {filename}"]))
+            continue
 
-            err = error_cls(summary=summary, details=[error_msg, "in " + filename])
-
-            errors.append(err)
+        for variants in variants_by_name.values():
+            for variant in variants:
+                try:
+                    variant.validate_or_raise(v, pkg_cls=pkg)
+                except (
+                    spack.variant.InconsistentValidationError,
+                    spack.variant.MultipleValuesInExclusiveVariantError,
+                    spack.variant.InvalidVariantValueError,
+                ) as e:
+                    msg = str(e).strip()
+                    errors.append(error_cls(summary=summary, details=[msg, f"in {filename}"]))
 
     return errors
 
