@@ -28,12 +28,14 @@ spack:
       - uncrustify
       - py-fprettify
       - py-fortran-language-server
+      # version control
+      - git # always build one, better fsmonitor support etc.
       # cli dev tools
       - ripgrep
       - gh
       - fd
       - bfs
-      - 'fzf^go@1.20:'
+      - fzf
       - tree
       - jq
       - py-yq
