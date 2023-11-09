@@ -53,7 +53,7 @@ spack:
       # ensure we can use a jobserver build and do this fast
       - gmake
       - ninja # should be @kitware, can't be because of meson requirement
-      - "openssl certs=system" # must be this, system external does not work
+      # - "openssl certs=system" # in gitlab, this causes failure # must be this, system external does not work
     - arch:
       - '%gcc target=x86_64_v3'
 
