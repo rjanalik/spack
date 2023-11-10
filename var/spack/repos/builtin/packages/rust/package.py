@@ -91,8 +91,17 @@ class Rust(Package):
         ar = which("ar", required=True)
         env.set("AR", ar.path)
 
+        output = Executable("openssl")("version", "-d", output=str, error=str)
+        ossl = self.spec["openssl"]
+        m = re.match('OPENSSLDIR: "([^"]+)"', output)
+        if m:
+            cert_dir = m.group(1)
+        elif ossl.external and ossl.prefix == "/usr":
+            cert_dir = "/etc"
+        else:
+            cert_dir = join_path(ossl.prefix, "etc")
         # Manually inject the path of openssl's certs for build.
-        certs = join_path(self.spec["openssl"].prefix, "etc/openssl/cert.pem")
+        certs = join_path(cert_dir, "openssl/cert.pem")
         env.set("CARGO_HTTP_CAINFO", certs)
 
     def configure(self, spec, prefix):
