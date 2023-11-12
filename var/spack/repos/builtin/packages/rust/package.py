@@ -91,46 +91,44 @@ class Rust(Package):
         ar = which("ar", required=True)
         env.set("AR", ar.path)
 
-        # output = Executable("openssl")("version", "-d", output=str, error=str)
-        # ossl = self.spec["openssl"]
-        # m = re.match('OPENSSLDIR: "([^"]+)"', output)
-        # if m:
-        #     cert_dir = m.group(1)
-        # elif ossl.external and ossl.prefix == "/usr":
-        #     cert_dir = "/etc"
-        # else:
-        #     cert_dir = join_path(ossl.prefix, "etc")
-        # Manually inject the path of openssl's certs for build.
-        # certs = join_path(cert_dir, "openssl/cert.pem")
-        # env.set("CARGO_HTTP_CAINFO", certs)
-
     def configure(self, spec, prefix):
-        opts = []
+        mkdirp(join_path(self.build_directory, ".cargo"))
+        with open(join_path(self.build_directory, ".cargo", "config.toml"), "w") as cfg:
+            # Set prefix to install into spack prefix.
+            print(f"install.prefix={prefix}", file=cfg)
 
-        # Set prefix to install into spack prefix.
-        opts.append(f"install.prefix={prefix}")
+            # Set relative path to put system configuration files
+            # under the Spack package prefix.
+            print("install.sysconfdir=etc", file=cfg)
 
-        # Set relative path to put system configuration files
-        # under the Spack package prefix.
-        opts.append("install.sysconfdir=etc")
+            # Build extended suite of tools so dependent packages
+            # packages can build using cargo.
+            print("build.extended=true", file=cfg)
 
-        # Build extended suite of tools so dependent packages
-        # packages can build using cargo.
-        opts.append("build.extended=true")
+            # Build docs if specified by the +docs variant.
+            print(f"build.docs={str(spec.satisfies('+docs')).lower()}", file=cfg)
 
-        # Build docs if specified by the +docs variant.
-        opts.append(f"build.docs={str(spec.satisfies('+docs')).lower()}")
+            # Set binary locations for bootstrap rustc and cargo.
+            print(f"build.cargo={spec['rust-bootstrap'].prefix.bin.cargo}", file=cfg)
+            print(f"build.rustc={spec['rust-bootstrap'].prefix.bin.rustc}", file=cfg)
 
-        # Set binary locations for bootstrap rustc and cargo.
-        opts.append(f"build.cargo={spec['rust-bootstrap'].prefix.bin.cargo}")
-        opts.append(f"build.rustc={spec['rust-bootstrap'].prefix.bin.rustc}")
+            # Disable bootstrap LLVM download.
+            print("llvm.download-ci-llvm=false", file=cfg)
 
-        # Disable bootstrap LLVM download.
-        opts.append("llvm.download-ci-llvm=false")
+            output = Executable("openssl")("version", "-d", output=str, error=str)
+            ossl = self.spec["openssl"]
+            m = re.match('OPENSSLDIR: "([^"]+)"', output)
+            if m:
+                cert_dir = m.group(1)
+            elif ossl.external and ossl.prefix == "/usr":
+                cert_dir = "/etc"
+            else:
+                cert_dir = join_path(ossl.prefix, "etc")
+            # Manually inject the path of openssl's certs for build.
+            certs = join_path(cert_dir, "openssl/cert.pem")
+            print(f"http.cainfo='''{certs}'''", file=cfg)
 
-        # Convert opts to '--set key=value' format.
-        flags = [flag for opt in opts for flag in ("--set", opt)]
-
+        flags = []
         # Include both cargo and rustdoc in minimal install to match
         # standard download of rust.
         tools = ["cargo", "rustdoc"]
