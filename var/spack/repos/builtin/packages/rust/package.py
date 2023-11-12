@@ -92,8 +92,8 @@ class Rust(Package):
         env.set("AR", ar.path)
 
     def configure(self, spec, prefix):
-        mkdirp(join_path(self.build_directory, ".cargo"))
-        with open(join_path(self.build_directory, ".cargo", "config.toml"), "w") as cfg:
+        mkdirp(".cargo")
+        with open(join_path(".cargo", "config.toml"), "w") as cfg:
             # Set prefix to install into spack prefix.
             print(f"install.prefix={prefix}", file=cfg)
 
