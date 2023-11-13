@@ -91,6 +91,18 @@ class Rust(Package):
         ar = which("ar", required=True)
         env.set("AR", ar.path)
 
+        output = Executable("openssl")("version", "-d", output=str, error=str)
+        ossl = self.spec["openssl"]
+        m = re.match('OPENSSLDIR: "([^"]+)"', output)
+        if m:
+            cert_dir = m.group(1)
+        elif ossl.external and ossl.prefix == "/usr":
+            cert_dir = "/etc/openssl"
+        else:
+            cert_dir = join_path(ossl.prefix, "etc/openssl")
+        # Manually inject the path of openssl's certs for build.
+        env.set("CARGO_HTTP_CAINFO", join_path(cert_dir, "cert.pem"))
+
     def configure(self, spec, prefix):
         opts = []
 
@@ -114,19 +126,6 @@ class Rust(Package):
 
         # Disable bootstrap LLVM download.
         opts.append("llvm.download-ci-llvm=false")
-
-        output = Executable("openssl")("version", "-d", output=str, error=str)
-        ossl = self.spec["openssl"]
-        m = re.match('OPENSSLDIR: "([^"]+)"', output)
-        if m:
-            cert_dir = m.group(1)
-        elif ossl.external and ossl.prefix == "/usr":
-            cert_dir = "/etc/openssl"
-        else:
-            cert_dir = join_path(ossl.prefix, "etc/openssl")
-        # Manually inject the path of openssl's certs for build.
-        certs = join_path(cert_dir, "cert.pem")
-        opts.append(f"http.cainfo={certs}")
 
         # Convert opts to '--set key=value' format.
         flags = [flag for opt in opts for flag in ("--set", opt)]
