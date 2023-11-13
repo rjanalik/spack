@@ -92,8 +92,32 @@ class Rust(Package):
         env.set("AR", ar.path)
 
     def configure(self, spec, prefix):
-        mkdirp(".cargo")
-        with open(join_path(".cargo", "config.toml"), "w") as cfg:
+        flags = []
+        # Include both cargo and rustdoc in minimal install to match
+        # standard download of rust.
+        tools = ["cargo", "rustdoc"]
+
+        # Add additional tools as directed by the package variants.
+        if spec.satisfies("+analysis"):
+            tools.append("analysis")
+
+        if spec.satisfies("+clippy"):
+            tools.append("clippy")
+
+        if spec.satisfies("+src"):
+            tools.append("src")
+
+        if spec.satisfies("+rustfmt"):
+            tools.append("rustfmt")
+
+        # Compile tools into flag for configure.
+        flags.append(f"--tools={','.join(tools)}")
+
+        configure(*flags)
+
+        with open("config.toml", "r") as f:
+            config_result = f.read()
+        with open("config.toml", "w+") as cfg:
             # Set prefix to install into spack prefix.
             print(f"install.prefix={prefix}", file=cfg)
 
@@ -127,29 +151,7 @@ class Rust(Package):
             # Manually inject the path of openssl's certs for build.
             certs = join_path(cert_dir, "openssl/cert.pem")
             print(f"http.cainfo='''{certs}'''", file=cfg)
-
-        flags = []
-        # Include both cargo and rustdoc in minimal install to match
-        # standard download of rust.
-        tools = ["cargo", "rustdoc"]
-
-        # Add additional tools as directed by the package variants.
-        if spec.satisfies("+analysis"):
-            tools.append("analysis")
-
-        if spec.satisfies("+clippy"):
-            tools.append("clippy")
-
-        if spec.satisfies("+src"):
-            tools.append("src")
-
-        if spec.satisfies("+rustfmt"):
-            tools.append("rustfmt")
-
-        # Compile tools into flag for configure.
-        flags.append(f"--tools={','.join(tools)}")
-
-        configure(*flags)
+            cfg.write(config_result)
 
     def build(self, spec, prefix):
         python("./x.py", "build")
