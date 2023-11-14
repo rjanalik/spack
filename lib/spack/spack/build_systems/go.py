@@ -44,9 +44,11 @@ class GoBuilder(BaseBuilder):
         +-----------------------------------------------+--------------------+
         | **Method**                                    | **Purpose**        |
         +===============================================+====================+
-        | :py:attr:`~.GoBuilder.install_args`          | Specify arguments to ``go install``   |
+        | :py:attr:`~.GoBuilder.install_args`           | Specify arguments  |
+        |                                               | to ``go install``  |
         +-----------------------------------------------+--------------------+
-        | :py:attr:`~.GoBuilder.test_args`        | Specify arguments to ``go test``   |
+        | :py:attr:`~.GoBuilder.test_args`              | Specify arguments  |
+        |                                               | to ``go test``     |
         +-----------------------------------------------+--------------------+
     """
 
