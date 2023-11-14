@@ -55,7 +55,7 @@ class Npm(Package):
     )
 
     depends_on("node-js", type=("build", "run"))
-    depends_on("libvips")
+    depends_on("libvips", when="@:7")
 
     # npm 6.13.4 ships with node-gyp 5.0.5, which contains several Python 3
     # compatibility issues on macOS. Manually update to node-gyp 6.0.1 for
