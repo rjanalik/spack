@@ -8,7 +8,7 @@ import os
 from spack.package import *
 
 
-class Hub(Package):
+class Hub(GoPackage):
     """The github git wrapper"""
 
     homepage = "https://github.com/github/hub"
@@ -17,9 +17,3 @@ class Hub(Package):
 
     version("master", branch="master")
     version("2.14.2", sha256="e19e0fdfd1c69c401e1c24dd2d4ecf3fd9044aa4bd3f8d6fd942ed1b2b2ad21a")
-
-    extends("go")
-
-    def install(self, spec, prefix):
-        bash = which("bash")
-        bash(os.path.join("script", "build"), "-o", os.path.join(prefix, "bin", "hub"))

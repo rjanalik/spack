@@ -50,6 +50,7 @@ spack:
       - htop
       - tmux
       - ccache
+      - lazygit
       # ensure we can use a jobserver build and do this fast
       - gmake
       - ninja # should be @kitware, can't be because of meson requirement

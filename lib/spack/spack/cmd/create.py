@@ -185,6 +185,13 @@ class CMakePackageTemplate(PackageTemplate):
         args = []
         return args"""
 
+class GoPackageTemplate(PackageTemplate):
+    """Provides appropriate overrides for Go-module-based packages"""
+
+    base_class_name = "GoPackage"
+
+    body_def = ""
+
 
 class LuaPackageTemplate(PackageTemplate):
     """Provides appropriate overrides for LuaRocks-based packages"""
@@ -575,28 +582,29 @@ class SIPPackageTemplate(PackageTemplate):
 
 
 templates = {
-    "autotools": AutotoolsPackageTemplate,
     "autoreconf": AutoreconfPackageTemplate,
-    "cmake": CMakePackageTemplate,
-    "bundle": BundlePackageTemplate,
-    "qmake": QMakePackageTemplate,
-    "maven": MavenPackageTemplate,
-    "scons": SconsPackageTemplate,
-    "waf": WafPackageTemplate,
+    "autotools": AutotoolsPackageTemplate,
     "bazel": BazelPackageTemplate,
+    "bundle": BundlePackageTemplate,
+    "cmake": CMakePackageTemplate,
+    "generic": PackageTemplate,
+    "go": GoPackageTemplate,
+    "intel": IntelPackageTemplate,
+    "lua": LuaPackageTemplate,
+    "makefile": MakefilePackageTemplate,
+    "maven": MavenPackageTemplate,
+    "meson": MesonPackageTemplate,
+    "octave": OctavePackageTemplate,
+    "perlbuild": PerlbuildPackageTemplate,
+    "perlmake": PerlmakePackageTemplate,
     "python": PythonPackageTemplate,
+    "qmake": QMakePackageTemplate,
     "r": RPackageTemplate,
     "racket": RacketPackageTemplate,
-    "perlmake": PerlmakePackageTemplate,
-    "perlbuild": PerlbuildPackageTemplate,
-    "octave": OctavePackageTemplate,
     "ruby": RubyPackageTemplate,
-    "makefile": MakefilePackageTemplate,
-    "intel": IntelPackageTemplate,
-    "meson": MesonPackageTemplate,
-    "lua": LuaPackageTemplate,
+    "scons": SconsPackageTemplate,
     "sip": SIPPackageTemplate,
-    "generic": PackageTemplate,
+    "waf": WafPackageTemplate,
 }
 
 
@@ -679,6 +687,7 @@ class BuildSystemGuesser:
         clues = [
             (r"/CMakeLists\.txt$", "cmake"),
             (r"/NAMESPACE$", "r"),
+            (r"/go\.mod$", "go"),
             (r"/configure$", "autotools"),
             (r"/configure\.(in|ac)$", "autoreconf"),
             (r"/Makefile\.am$", "autoreconf"),
@@ -719,7 +728,9 @@ class BuildSystemGuesser:
         # Determine the build system based on the files contained
         # in the archive.
         for pattern, bs in clues:
+            tty.debug(pattern, bs)
             if any(re.search(pattern, line) for line in lines):
+                tty.debug("matched")
                 self.build_system = bs
                 break
 
