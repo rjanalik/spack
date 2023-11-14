@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+import os
 import re
 
 from spack.package import *
@@ -94,15 +95,24 @@ class Rust(Package):
 
         output = Executable("openssl")("version", "-d", output=str, error=str)
         ossl = self.spec["openssl"]
+
+        def get_test_path(p):
+            certs = join_path(p, "cert.pem")
+            if os.path.exists(certs):
+                return certs
+            return None
+
+        # cascade of checks to deal with finding certs, don't set if no file is found in
+        # case ca-certificates isn't installed
+        certs = None
         m = re.match('OPENSSLDIR: "([^"]+)"', output)
         if m:
-            cert_dir = m.group(1)
-        elif ossl.external and ossl.prefix == "/usr":
-            cert_dir = "/etc/openssl"
-        else:
-            cert_dir = join_path(ossl.prefix, "etc/openssl")
+            certs = get_test_path(m.group(1))
+        if certs is None:
+            certs = get_test_path(join_path(ossl.prefix, "etc/openssl"))
         # Manually inject the path of openssl's certs for build.
-        env.set("CARGO_HTTP_CAINFO", join_path(cert_dir, "cert.pem"))
+        if certs is not None:
+            env.set("CARGO_HTTP_CAINFO", join_path(cert_dir, "cert.pem"))
 
     def configure(self, spec, prefix):
         opts = []
