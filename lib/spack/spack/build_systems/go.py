@@ -9,15 +9,10 @@ import llnl.util.filesystem as fs
 
 import spack.builder
 import spack.package_base
-from spack.directives import build_system, conflicts, extends
+from spack.directives import build_system, extends
 from spack.multimethod import when
 
-from ._checks import (
-    BaseBuilder,
-    apply_macos_rpath_fixups,
-    execute_build_time_tests,
-    execute_install_time_tests,
-)
+from ._checks import BaseBuilder, execute_install_time_tests
 
 
 class GoPackage(spack.package_base.PackageBase):
@@ -57,7 +52,6 @@ class GoBuilder(BaseBuilder):
 
     phases = ("edit", "install")
 
-
     #: Arguments for ``go install`` during the :py:meth:`~.GoBuilder.install` phase
     install_args: List[str] = []
 
@@ -71,7 +65,6 @@ class GoBuilder(BaseBuilder):
         env.set("GO111MODULE", "on")
         env.set("GOTOOLCHAIN", "local")
 
-
     @property
     def build_directory(self):
         """Return the directory containing the main go.mod."""
@@ -84,11 +77,11 @@ class GoBuilder(BaseBuilder):
     def install(self, pkg, spec, prefix):
         """Run "go install"."""
         with fs.working_dir(self.build_directory):
-            inspect.getmodule(self.pkg).go("install",*self.install_args)
+            inspect.getmodule(self.pkg).go("install", *self.install_args)
 
     spack.builder.run_after("install")(execute_install_time_tests)
 
     def check(self):
         """Run "go test"."""
         with fs.working_dir(self.build_directory):
-            inspect.getmodule(self.pkg).go("test",*self.test_args)
+            inspect.getmodule(self.pkg).go("test", *self.test_args)

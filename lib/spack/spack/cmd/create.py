@@ -185,6 +185,7 @@ class CMakePackageTemplate(PackageTemplate):
         args = []
         return args"""
 
+
 class GoPackageTemplate(PackageTemplate):
     """Provides appropriate overrides for Go-module-based packages"""
 
