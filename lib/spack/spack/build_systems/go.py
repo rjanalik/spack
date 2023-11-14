@@ -36,8 +36,7 @@ class GoBuilder(BaseBuilder):
     a golang go.mod file. It has three phases that can be overridden, if need be:
 
             1. :py:meth:`~.GoBuilder.edit`
-            2. :py:meth:`~.GoBuilder.build`
-            3. :py:meth:`~.GoBuilder.install`
+            2. :py:meth:`~.GoBuilder.install`
 
     For a finer tuning you may override:
 
