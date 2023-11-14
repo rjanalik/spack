@@ -4,6 +4,7 @@ spack:
     all:
       require: target=x86_64_v3
   concretizer:
+    reuse: fresh
     unify: true
   definitions:
     - default_specs:
@@ -23,7 +24,7 @@ spack:
       - node-js # for editor plugins etc., pyright language server
       - npm
       - go # to build fzf, gh, hub
-      - rust+analysis~clippy # fd, ripgrep, hyperfine, exa, rust-analyzer
+      - rust+analysis+docs # fd, ripgrep, hyperfine, exa, rust-analyzer
       - binutils+ld+gold+plugins # support linking with built gcc
       # styling and lints
       - astyle
