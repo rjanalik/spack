@@ -13,7 +13,7 @@ class Rust(Package):
     """The Rust programming language toolchain."""
 
     homepage = "https://www.rust-lang.org"
-    url = "https://github.com/rust-lang/rust/archive/refs/tags/1.73.0.tar.gz"
+    url = "https://static.rust-lang.org/dist/rustc-1.42.0-src.tar.gz"
     git = "https://github.com/rust-lang/rust.git"
 
     maintainers("alecbcs")
@@ -41,6 +41,7 @@ class Rust(Package):
     depends_on("rust-bootstrap@1.59:1.60", type="build", when="@1.60")
     depends_on("rust-bootstrap@1.64:1.65", type="build", when="@1.65")
     depends_on("rust-bootstrap@1.69:1.70", type="build", when="@1.70")
+    depends_on("rust-bootstrap@1.73:1.74", type="build", when="@1.73")
 
     # When adding a version of Rust you may need to add an additional version
     # to rust-bootstrap as the minimum bootstrapping requirements increase.
@@ -58,7 +59,7 @@ class Rust(Package):
     version("nightly")
 
     # Stable versions.
-    version("1.73.0", sha256="adc26f4818abaf34898022be421cb3da16c3e720e7d59d82a579cbd3ab131707")
+    version("1.73.0", sha256="96d62e6d1f2d21df7ac8acb3b9882411f9e7c7036173f7f2ede9e1f1f6b1bb3a")
     version("1.70.0", sha256="b2bfae000b7a5040e4ec4bbc50a09f21548190cb7570b0ed77358368413bd27c")
     version("1.65.0", sha256="5828bb67f677eabf8c384020582b0ce7af884e1c84389484f7f8d00dd82c0038")
     version("1.60.0", sha256="20ca826d1cf674daf8e22c4f8c4b9743af07973211c839b85839742314c838b7")
