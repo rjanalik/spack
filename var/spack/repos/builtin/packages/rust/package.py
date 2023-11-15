@@ -94,9 +94,6 @@ class Rust(Package):
         ar = which("ar", required=True)
         env.set("AR", ar.path)
 
-        output = Executable("openssl")("version", "-d", output=str, error=str)
-        ossl = self.spec["openssl"]
-
         def get_test_path(p):
             certs = join_path(p, "cert.pem")
             if os.path.exists(certs):
@@ -106,9 +103,15 @@ class Rust(Package):
         # cascade of checks to deal with finding certs, don't set if no file is found in
         # case ca-certificates isn't installed
         certs = None
-        m = re.match('OPENSSLDIR: "([^"]+)"', output)
-        if m:
-            certs = get_test_path(m.group(1))
+        ossl = self.spec["openssl"]
+        if ossl.external:
+            try:
+                output = Executable(join_path(ossl.prefix, "bin/openssl"))("version", "-d", output=str, error=str)
+                m = re.match('OPENSSLDIR: "([^"]+)"', output)
+                if m:
+                    certs = get_test_path(m.group(1))
+            except ProcessError:
+                pass
         if certs is None:
             certs = get_test_path(join_path(ossl.prefix, "etc/openssl"))
         # Manually inject the path of openssl's certs for build.
