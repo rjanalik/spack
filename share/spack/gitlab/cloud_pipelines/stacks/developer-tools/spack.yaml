@@ -46,6 +46,7 @@ spack:
       - hub
       - ncdu
       - eza
+      - lsd
       - hyperfine
       - htop
       - tmux
