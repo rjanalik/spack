@@ -172,6 +172,14 @@ class AutoreconfPackageTemplate(PackageTemplate):
         return args"""
 
 
+class CargoPackageTemplate(PackageTemplate):
+    """Provides appropriate overrides for cargo-based packages"""
+
+    base_class_name = "CargoPackage"
+
+    body_def = ""
+
+
 class CMakePackageTemplate(PackageTemplate):
     """Provides appropriate overrides for CMake-based packages"""
 
@@ -587,6 +595,7 @@ templates = {
     "autotools": AutotoolsPackageTemplate,
     "bazel": BazelPackageTemplate,
     "bundle": BundlePackageTemplate,
+    "cargo": CargoPackageTemplate,
     "cmake": CMakePackageTemplate,
     "generic": PackageTemplate,
     "go": GoPackageTemplate,
@@ -688,6 +697,7 @@ class BuildSystemGuesser:
         clues = [
             (r"/CMakeLists\.txt$", "cmake"),
             (r"/NAMESPACE$", "r"),
+            (r"/Cargo\.toml$", "cargo"),
             (r"/go\.mod$", "go"),
             (r"/configure$", "autotools"),
             (r"/configure\.(in|ac)$", "autoreconf"),
