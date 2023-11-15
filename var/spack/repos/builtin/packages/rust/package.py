@@ -106,7 +106,9 @@ class Rust(Package):
         ossl = self.spec["openssl"]
         if ossl.external:
             try:
-                output = Executable(join_path(ossl.prefix, "bin/openssl"))("version", "-d", output=str, error=str)
+                output = Executable(join_path(ossl.prefix, "bin/openssl"))(
+                    "version", "-d", output=str, error=str
+                )
                 m = re.match('OPENSSLDIR: "([^"]+)"', output)
                 if m:
                     certs = get_test_path(m.group(1))
