@@ -25,8 +25,6 @@ class CargoPackage(spack.package_base.PackageBase):
     build_system("cargo")
 
     with when("build_system=cargo"):
-        # TODO: this seems like it should be depends_on, see
-        # setup_dependent_build_environment in cargo for why I kept it like this
         depends_on("rust", type="build")
 
 
