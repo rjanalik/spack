@@ -26,6 +26,7 @@ This module supports the coordination of local and distributed concurrent
 installations of packages in a Spack instance.
 """
 
+import argparse
 import copy
 import glob
 import heapq
@@ -47,6 +48,7 @@ from llnl.util.tty.log import log_output
 
 import spack.binary_distribution as binary_distribution
 import spack.build_environment
+from spack.cmd import buildcache as bc
 import spack.compilers
 import spack.config
 import spack.database
@@ -1707,6 +1709,14 @@ class PackageInstaller:
             # If a compiler, ensure it is added to the configuration
             if task.compiler:
                 self._add_compiler_package_to_config(pkg)
+
+            # Create and execute buildcache push command
+            if install_args["buildcache_push"]:
+                bc_parser = argparse.ArgumentParser()
+                bc.setup_parser(bc_parser)
+                bc_args = ["push", "--update-index", install_args["buildcache_push"], pkg.name]
+                push_args = bc_parser.parse_args(bc_args)
+                bc.push_fn(push_args)
         except spack.build_environment.StopPhase as e:
             # A StopPhase exception means that do_install was asked to
             # stop early from clients, and is not an error at this point

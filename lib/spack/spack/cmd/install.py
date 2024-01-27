@@ -60,6 +60,7 @@ def install_kwargs_from_args(args):
         "package_cache_only": cache_opt(args.cache_only, pkg_use_bc),
         "dependencies_use_cache": cache_opt(args.use_cache, dep_use_bc),
         "dependencies_cache_only": cache_opt(args.cache_only, dep_use_bc),
+        "buildcache_push": args.buildcache_push,
         "include_build_deps": args.include_build_deps,
         "explicit": True,  # Use true as a default for install command
         "stop_at": args.until,
@@ -147,6 +148,13 @@ def setup_parser(subparser):
         "- `auto` behaves like --use-cache\n"
         "- `only` behaves like --cache-only\n"
         "- `never` behaves like --no-cache",
+    )
+    cache_group.add_argument(
+        "--buildcache-push",
+        type=str,
+        dest="buildcache_push",
+        default=None,
+        help="push packages to the cache after building from source",
     )
 
     subparser.add_argument(
