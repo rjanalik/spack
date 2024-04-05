@@ -15,6 +15,7 @@ Currently the following hooks are supported:
     * post_install(spec, explicit)
     * pre_uninstall(spec)
     * post_uninstall(spec)
+    * on_install_done()
 
 This can be used to implement support for things like module
 systems (e.g. modules, lmod, etc.) or to add other custom
@@ -73,3 +74,6 @@ post_install = _HookRunner("post_install")
 
 pre_uninstall = _HookRunner("pre_uninstall")
 post_uninstall = _HookRunner("post_uninstall")
+
+# These are hooks in installer.py, after completing all installations
+on_install_done = _HookRunner("on_install_done")

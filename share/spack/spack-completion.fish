@@ -1967,7 +1967,7 @@ complete -c spack -n '__fish_spack_using_command info' -l variants-by-name -f -a
 complete -c spack -n '__fish_spack_using_command info' -l variants-by-name -d 'list variants in strict name order; don\'t group by condition'
 
 # spack install
-set -g __fish_spack_optspecs_spack_install h/help only= u/until= j/jobs= overwrite fail-fast keep-prefix keep-stage dont-restage use-cache no-cache cache-only use-buildcache= include-build-deps no-check-signature show-log-on-error source n/no-checksum v/verbose fake only-concrete add no-add f/file= clean dirty test= log-format= log-file= help-cdash cdash-upload-url= cdash-build= cdash-site= cdash-track= cdash-buildstamp= y/yes-to-all U/fresh reuse reuse-deps deprecated
+set -g __fish_spack_optspecs_spack_install h/help only= u/until= j/jobs= overwrite fail-fast keep-prefix keep-stage dont-restage use-cache no-cache cache-only use-buildcache= update-index include-build-deps no-check-signature show-log-on-error source n/no-checksum v/verbose fake only-concrete add no-add f/file= clean dirty test= log-format= log-file= help-cdash cdash-upload-url= cdash-build= cdash-site= cdash-track= cdash-buildstamp= y/yes-to-all U/fresh reuse reuse-deps deprecated
 complete -c spack -n '__fish_spack_using_command_pos_remainder 0 install' -f -k -a '(__fish_spack_specs)'
 complete -c spack -n '__fish_spack_using_command install' -s h -l help -f -a help
 complete -c spack -n '__fish_spack_using_command install' -s h -l help -d 'show this help message and exit'
@@ -1995,6 +1995,8 @@ complete -c spack -n '__fish_spack_using_command install' -l cache-only -f -a ca
 complete -c spack -n '__fish_spack_using_command install' -l cache-only -d 'only install package from binary mirrors'
 complete -c spack -n '__fish_spack_using_command install' -l use-buildcache -r -f -a use_buildcache
 complete -c spack -n '__fish_spack_using_command install' -l use-buildcache -r -d 'select the mode of buildcache for the \'package\' and \'dependencies\''
+complete -c spack -n '__fish_spack_using_command install' -l update-index -l rebuild-index -f -a update_index
+complete -c spack -n '__fish_spack_using_command install' -l update-index -l rebuild-index -d 'regenerate buildcache index after building package(s)'
 complete -c spack -n '__fish_spack_using_command install' -l include-build-deps -f -a include_build_deps
 complete -c spack -n '__fish_spack_using_command install' -l include-build-deps -d 'include build deps when installing from cache, useful for CI pipeline troubleshooting'
 complete -c spack -n '__fish_spack_using_command install' -l no-check-signature -f -a unsigned

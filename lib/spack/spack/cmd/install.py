@@ -66,6 +66,7 @@ def install_kwargs_from_args(args):
         "unsigned": args.unsigned,
         "install_deps": ("dependencies" in args.things_to_install),
         "install_package": ("package" in args.things_to_install),
+        "update_index": args.update_index,
     }
 
 
@@ -147,6 +148,13 @@ def setup_parser(subparser):
         "- `auto` behaves like --use-cache\n"
         "- `only` behaves like --cache-only\n"
         "- `never` behaves like --no-cache",
+    )
+    subparser.add_argument(
+        "--update-index",
+        "--rebuild-index",
+        action="store_true",
+        default=False,
+        help="regenerate buildcache index after building package(s)",
     )
 
     subparser.add_argument(

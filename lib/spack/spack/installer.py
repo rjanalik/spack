@@ -1162,6 +1162,10 @@ class PackageInstaller:
         # fast then that option applies to all build requests.
         self.fail_fast = False
 
+        # Cache update_index option to update the index of buildcaches
+        # if a package was pushed to a bildcache
+        self.update_index = False
+
     def __repr__(self) -> str:
         """Returns a formal representation of the package installer."""
         rep = f"{self.__class__.__name__}("
@@ -2017,6 +2021,9 @@ class PackageInstaller:
             install_args = task.request.install_args
             keep_prefix = install_args.get("keep_prefix")
 
+            if install_args.get("update_index", False):
+                self.update_index = True
+
             pkg, pkg_id, spec = task.pkg, task.pkg_id, task.pkg.spec
             install_status.next_pkg(pkg)
             install_status.set_term_title(f"Processing {pkg.name}")
@@ -2255,6 +2262,9 @@ class PackageInstaller:
                 pkg=pkg,
             )
 
+        # Send final status that install is successful
+        spack.hooks.on_install_done(update_index=self.update_index)
+
 
 class BuildProcessInstaller:
     """This class implements the part installation that happens in the child process."""
@@ -2302,6 +2312,9 @@ class BuildProcessInstaller:
 
         # env modifications by Spack
         self.env_mods = install_args.get("env_modifications", EnvironmentModifications())
+
+        # whether to update buildcache index
+        self.update_index = install_args.get("update_index", False)
 
         # timer for build phases
         self.timer = timer.Timer()
